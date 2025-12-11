@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Grafik Suspensi – Jarak vs Waktu</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background:#111;
+    color:white;
+}
+label{display:block;margin-top:10px;font-weight:600;}
+input{padding:8px;width:250px;margin-top:5px;}
+button{
+    margin-top:15px;padding:10px 20px;background:#ff9800;
+    border:none;color:black;font-weight:bold;cursor:pointer;border-radius:5px;
+}
+button:hover{background:#ffc107;}
+#chartBox{margin-top:25px;background:white;padding:20px;border-radius:10px;}
+</style>
+</head>
+<body>
+
+<h2>Grafik Suspensi Kendaraan sepeda </h2>
+
+<!-- 7 DATA UTAMA -->
+<label>Massa Pengendara (kg):</label>
+<input type="number" id="massaPengendara" value="65">
+
+<label>Massa Roda (kg):</label>
+<input type="number" id="massaRoda" value="12">
+
+<label>Kekakuan Pegas (k) N/m:</label>
+<input type="number" id="kPegas" value="15000">
+
+<label>Redaman Suspensi (c):</label>
+<input type="number" id="cRedaman" value="120">
+
+<label>Amplitudo Awal (A):</label>
+<input type="number" id="amplitudo" value="10">
+
+<label>Frekuensi (f) getaran:</label>
+<input type="number" id="frekuensi" value="0.4">
+
+<label>Gaya Eksternal Jalan (F) N:</label>
+<input type="number" id="gayaJalan" value="50">
+
+<button onclick="generate()">Buat Grafik</button>
+
+<div id="chartBox">
+    <canvas id="myChart"></canvas>
+</div>
+
+<script>
+let myChart = null;
+
+function generate(){
+    // Ambil 7 DATA UTAMA
+    let mp = parseFloat(document.getElementById("massaPengendara").value);
+    let mr = parseFloat(document.getElementById("massaRoda").value);
+    let k  = parseFloat(document.getElementById("kPegas").value);
+    let c  = parseFloat(document.getElementById("cRedaman").value);
+    let A  = parseFloat(document.getElementById("amplitudo").value);
+    let f  = parseFloat(document.getElementById("frekuensi").value);
+    let F  = parseFloat(document.getElementById("gayaJalan").value);
+
+    // Validasi: semua harus terisi
+    if(mp<=0 || mr<=0 || k<=0 || c<=0 || A<=0 || f<=0 || F<=0){
+        alert("Semua 7 data utama harus diisi dengan benar!");
+        return;
+    }
+
+    // Waktu simulasi
+    let n = 50;
+    let waktu = [];
+    for(let i = 0; i < n; i++){ waktu.push(i/10); }
+
+    // Persamaan getaran harmonis dengan redaman
+    let jarak1 = [];
+    let jarak2 = [];
+
+    for(let t = 0; t < waktu.length; t++){
+        let time = waktu[t];
+
+        // Grafik 1 dipengaruhi massa roda
+        let y1 = A * Math.exp(-c/1000 * time) * Math.sin(f * time * 10) 
+                 + (mr * 0.05) + (F * 0.01);
+
+        // Grafik 2 dipengaruhi massa pengendara
+        let y2 = A * Math.exp(-c/1100 * time) * Math.sin(f * time * 10 + 0.5)
+                 + (mp * 0.03) + (F * 0.015);
+
+        jarak1.push(y1);
+        jarak2.push(y2);
+    }
+
+    if(myChart !== null){ myChart.destroy(); }
+
+    const ctx = document.getElementById("myChart").getContext("2d");
+
+    myChart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: waktu,
+            datasets: [
+                {
+                    label: "Suspensi 1 (bergantung massa roda)",
+                    data: jarak1,
+                    borderColor: "blue",
+                    borderWidth: 2,
+                    tension: 0.4,
+                },
+                {
+                    label: "Suspensi 2 (bergantung massa pengendara)",
+                    data: jarak2,
+                    borderColor: "orange",
+                    borderWidth: 2,
+                    tension: 0.4,
+                }
+            ]
+        },
+        options: {
+            responsive:true,
+            scales:{
+                x:{title:{display:true,text:"Waktu (detik)" }},
+                y:{title:{display:true,text:"Jarak (mm)" }}
+            }
+        }
+    });
+}
+</script>
+
+</body>
+</html>
